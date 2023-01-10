@@ -1,6 +1,8 @@
 from tkinter import *
 from tkinter import messagebox
 import random
+import json
+
 
 def pass_gen():
     letters = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z']
@@ -33,6 +35,12 @@ def save():
     w = website_input.get()
     e = email_input.get()
     p = pass_input.get()
+    new_data = {
+        w: {
+            "email": e,
+            "password": p
+        }
+    }
     if w == "" or p == "" or e == "":
         messagebox.askokcancel(title=w, message=f"Don't leave any fields empty!")
 
@@ -40,12 +48,36 @@ def save():
          is_ok = messagebox.askokcancel(title=w, message=f"These are the details entered: \nEmail:{e} \nPassword:{p}\nis it ok to save?")
 
          if is_ok:
-            with open(file="data.txt", mode="a") as info:
-                 info.write(w + "|" + e + "|" + p + "\n")
-                 website_input.delete(0, END)
-                 pass_input.delete(0, END)
+            try:
+                 with open("data.json", "r") as data_file:
+                    data = json.load(data_file)
+            except FileNotFoundError:
+                with open("data.json", "w") as data_file:
+                    data = json.dump(new_data, data_file, indent=4)
 
+            else:
+                data.update(new_data)
+                with open("data.json", "w") as data_file:
+                    data = json.dump(data, data_file, indent=4)
 
+            finally:
+                website_input.delete(0, END)
+                pass_input.delete(0, END)
+
+def search():
+    w = website_input.get()
+    try:
+        with open("data.json", "r") as data_file:
+            data = json.load(data_file)
+    except FileNotFoundError:
+        messagebox.showinfo(title=w, message="No Data File Found!")
+    else:
+        if w in data:
+            e = data[w]["email"]
+            p = data[w]["password"]
+            messagebox.showinfo(title=w, message=f"These are your details: \nEmail:{e} \nPassword:{p}")
+        else:
+            messagebox.showinfo(title=w, message=f"No Details for the {w} exists!")
 
 
 window = Tk()
@@ -61,8 +93,8 @@ canvas.grid(row=0, column=1)
 website_label = Label(text="Website:")
 website_label.grid(column=0, row=1)
 
-website_input = Entry(width=38)
-website_input.grid(column=1, row=1, columnspan=2)
+website_input = Entry()
+website_input.grid(column=1, row=1)
 website_input.focus()
 
 email_label = Label(text="Email/User_Name:")
@@ -83,6 +115,9 @@ generate_pass.grid(row=3, column=2)
 
 add = Button(text="Add", width=36, command=save)
 add.grid(column=1, row=4, columnspan=2)
+
+search_button = Button(text="Search", command=search)
+search_button.grid(column=2, row=1)
 
 
 
